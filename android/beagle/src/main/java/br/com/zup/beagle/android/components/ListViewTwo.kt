@@ -54,7 +54,8 @@ internal data class ListViewTwo(
     val template: ServerDrivenComponent,
     val onScrollEnd: List<Action>? = null,
     val scrollThreshold: Int? = null,
-    val useParentScroll: Boolean = false
+    val useParentScroll: Boolean = false,
+    val iteratorName: String? = null
 ) : WidgetView(), ContextComponent {
 
     @Transient
@@ -83,7 +84,7 @@ internal data class ListViewTwo(
             }
         })
         val orientation = toRecyclerViewOrientation()
-        contextAdapter = ListViewContextAdapter2(template, viewFactory, orientation, rootView)
+        contextAdapter = ListViewContextAdapter2(template, iteratorName, viewFactory, orientation, rootView)
         recyclerView.apply {
             setHasFixedSize(true)
             adapter = contextAdapter
@@ -153,6 +154,7 @@ internal data class ListViewTwo(
 
 internal class ListViewContextAdapter2(
     private val template: ServerDrivenComponent,
+    private val iteratorName: String? = null,
     private val viewFactory: ViewFactory,
     private val orientation: Int,
     private val rootView: RootView,
@@ -186,9 +188,11 @@ internal class ListViewContextAdapter2(
 
     private fun isOrientationVertical() = (orientation == RecyclerView.VERTICAL)
 
+    private fun getContextDataId() = iteratorName ?: "item"
+
     override fun onBindViewHolder(holder: ContextViewHolderTwo, position: Int) {
         Log.i("LIST", "onBindViewHolder")
-        viewModel.addContext(holder.itemView, ContextData(id = "item", value = listItems[position]))
+        viewModel.addContext(holder.itemView, ContextData(id = getContextDataId(), value = listItems[position]))
     }
 
     fun setList(list: List<Any>) {
