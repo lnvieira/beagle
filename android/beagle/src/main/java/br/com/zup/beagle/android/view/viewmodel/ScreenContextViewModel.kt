@@ -52,7 +52,6 @@ internal class ScreenContextViewModel(
         return viewIds.push(newId)
     }
 
-
     fun addContext(view: View, contextData: ContextData) {
         contextDataManager.addContext(view, contextData)
     }
@@ -65,13 +64,9 @@ internal class ScreenContextViewModel(
         contextDataManager.addBinding(view, bind, observer)
     }
 
-    fun linkBindingToContext() {
-        contextDataManager.linkBindingToContext()
-    }
-
-    fun linkBindingToContextAndEvaluateThem() {
-        contextDataManager.linkBindingToContext()
-        contextDataManager.evaluateContexts()
+    fun clearContext(view: View) {
+        viewIds.remove(view.id)
+        contextDataManager.clearContext(view)
     }
 
     fun resolveBindings(view: View){

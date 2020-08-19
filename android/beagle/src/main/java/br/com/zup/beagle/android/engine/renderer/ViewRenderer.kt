@@ -16,7 +16,6 @@
 
 package br.com.zup.beagle.android.engine.renderer
 
-import android.util.Log
 import android.view.View
 import br.com.zup.beagle.android.components.utils.ComponentStylization
 import br.com.zup.beagle.core.ServerDrivenComponent
@@ -40,10 +39,13 @@ internal abstract class ViewRenderer<T : ServerDrivenComponent>(
      * viewFactory.makeBeagleFlexView(rootView.getContext())
      */
     fun build(rootView: RootView): View {
+        val viewModel = rootView.generateViewModelInstance<ScreenContextViewModel>()
         val builtView = buildView(rootView)
+
         componentStylization.apply(builtView, component)
+
         if (builtView.id == View.NO_ID) {
-            builtView.id = rootView.generateViewModelInstance<ScreenContextViewModel>().generateNewViewId()
+            builtView.id = viewModel.generateNewViewId()
         }
 
         contextComponentHandler.handleContext(rootView, builtView, component)
@@ -54,11 +56,9 @@ internal abstract class ViewRenderer<T : ServerDrivenComponent>(
 
             override fun onViewAttachedToWindow(v: View?) {
                 v?.let {
-                    rootView.generateViewModelInstance<ScreenContextViewModel>().resolveBindings(it)
+                    viewModel.resolveBindings(it)
                 }
-
             }
-
         })
         return builtView
     }

@@ -151,17 +151,17 @@ fun ServerDrivenComponent.toView(rootView: RootView): View {
     /**
      * Vamos ter que ver como solucionar esse problema dos ids.
      */
-    /*val viewModel = rootView.generateViewModelInstance<ScreenContextViewModel>()
-    //viewModel.resetIds()
-    return viewFactory.makeBeagleFlexView(rootView.getContext()).apply {
-        addServerDrivenComponent(this@toView, rootView)
-    }*/
+//    val viewModel = rootView.generateViewModelInstance<ScreenContextViewModel>()
+//    viewModel.resetIds()
+    return viewFactory.makeBeagleFlexView(rootView).apply {
+        addServerDrivenComponent(this@toView)
+    }
 
     /**
      * Sugestão de melhoria, pois parece que a tela sempre tem um BeagleFlexView a mais do que precisaria
      * TODO: verificar quando são widgets que não possuem container
      */
-     val view = ViewRendererFactory().make(this).build(rootView)
-     return view
+//     val view = ViewRendererFactory().make(this).build(rootView)
+//     return view
 
 }

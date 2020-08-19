@@ -16,6 +16,7 @@
 
 package br.com.zup.beagle.android.components
 
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams
@@ -27,14 +28,19 @@ import br.com.zup.beagle.android.action.Action
 import br.com.zup.beagle.android.context.Bind
 import br.com.zup.beagle.android.context.ContextComponent
 import br.com.zup.beagle.android.context.ContextData
+import br.com.zup.beagle.android.data.serializer.BeagleSerializer
+import br.com.zup.beagle.android.utils.generateViewModelInstance
 import br.com.zup.beagle.android.utils.observeBindChanges
 import br.com.zup.beagle.android.utils.setContextData
 import br.com.zup.beagle.android.utils.toView
 import br.com.zup.beagle.android.view.ViewFactory
+import br.com.zup.beagle.android.view.viewmodel.ScreenContextViewModel
 import br.com.zup.beagle.android.widget.RootView
 import br.com.zup.beagle.android.widget.WidgetView
 import br.com.zup.beagle.annotation.RegisterWidget
 import br.com.zup.beagle.core.ServerDrivenComponent
+import br.com.zup.beagle.core.Style
+import br.com.zup.beagle.widget.core.Flex
 import br.com.zup.beagle.widget.core.FlexDirection.COLUMN
 import br.com.zup.beagle.widget.core.FlexDirection.ROW
 import br.com.zup.beagle.widget.core.ListDirection
@@ -62,12 +68,24 @@ internal data class ListViewTwo(
 
     override fun buildView(rootView: RootView): View {
         val recyclerView = viewFactory.makeRecyclerView(rootView.getContext())
-        onInit?.forEach { action ->
-            action.execute(rootView, recyclerView)
-        }
+        var onInitCalled = false
+        recyclerView.addOnAttachStateChangeListener(object: View.OnAttachStateChangeListener{
+            override fun onViewDetachedFromWindow(v: View?) {
+            }
+
+            override fun onViewAttachedToWindow(v: View?) {
+                if(!onInitCalled){
+                    onInit?.forEach { action ->
+                        action.execute(rootView, recyclerView)
+                    }
+                    onInitCalled = true
+                }
+            }
+        })
         val orientation = toRecyclerViewOrientation()
         contextAdapter = ListViewContextAdapter2(template, viewFactory, orientation, rootView)
         recyclerView.apply {
+            setHasFixedSize(true)
             adapter = contextAdapter
             layoutManager = LinearLayoutManager(context, orientation, false)
             isNestedScrollingEnabled = useParentScroll
@@ -94,7 +112,6 @@ internal data class ListViewTwo(
                 }
                 list = value
             }
-
         }
     }
 
@@ -130,11 +147,9 @@ internal data class ListViewTwo(
             val lastVisible = it.findLastVisibleItemPosition().toFloat()
             scrolled = (lastVisible / totalItemCount) * 100
         }
-
         return scrolled
     }
 }
-
 
 internal class ListViewContextAdapter2(
     private val template: ServerDrivenComponent,
@@ -144,18 +159,23 @@ internal class ListViewContextAdapter2(
     private var listItems: ArrayList<Any> = ArrayList()
 ) : RecyclerView.Adapter<ContextViewHolderTwo>() {
 
-    override fun getItemViewType(position: Int): Int = position
+    private val viewModel = rootView.generateViewModelInstance<ScreenContextViewModel>()
 
     override fun onCreateViewHolder(parent: ViewGroup, position: Int): ContextViewHolderTwo {
-        /**
-         * TODO: verificar se vai ser mantida essa chamada para toView() em função do problema de viewID
-         */
-        val view = template
-            .toView(rootView)
-            .also {
-                it.layoutParams = LayoutParams(layoutParamWidth(), layoutParamHeight())
-            }
-        return ContextViewHolderTwo(view, rootView)
+        Log.i("LIST", "onCreateViewHolder")
+
+        val template = BeagleSerializer().serializeComponent(template)
+        val newTemplate = BeagleSerializer().deserializeComponent(template)
+
+        val view = viewFactory.makeBeagleFlexView(
+            rootView,
+            Style(flex = Flex(flexDirection = flexDirection()))
+        ).apply {
+            id = viewModel.generateNewViewId()
+            layoutParams = LayoutParams(layoutParamWidth(), layoutParamHeight())
+            addServerDrivenComponent(newTemplate)
+        }
+        return ContextViewHolderTwo(view)
     }
 
     private fun layoutParamWidth() = if (isOrientationVertical()) MATCH_PARENT else WRAP_CONTENT
@@ -167,17 +187,13 @@ internal class ListViewContextAdapter2(
     private fun isOrientationVertical() = (orientation == RecyclerView.VERTICAL)
 
     override fun onBindViewHolder(holder: ContextViewHolderTwo, position: Int) {
-        holder.itemView.setContextData(ContextData(id = "item", value = listItems[position]))
+        Log.i("LIST", "onBindViewHolder")
+        viewModel.addContext(holder.itemView, ContextData(id = "item", value = listItems[position]))
     }
 
     fun setList(list: List<Any>) {
-        try {
-            clearList()
-            listItems = ArrayList(list)
-            notifyDataSetChanged()
-        } catch (e: Exception) {
-
-        }
+        listItems = ArrayList(list)
+        notifyDataSetChanged()
     }
 
     fun clearList() {
@@ -189,5 +205,4 @@ internal class ListViewContextAdapter2(
     override fun getItemCount(): Int = listItems.size
 }
 
-internal class ContextViewHolderTwo(itemView: View, val rootView: RootView) : RecyclerView.ViewHolder(itemView) {
-}
+internal class ContextViewHolderTwo(itemView: View) : RecyclerView.ViewHolder(itemView)

@@ -16,6 +16,7 @@
 
 package br.com.zup.beagle.android.view.custom
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.view.View
 import androidx.lifecycle.Observer
@@ -38,28 +39,26 @@ sealed class BeagleViewState {
     object LoadFinished : BeagleViewState()
 }
 
+@SuppressLint("ViewConstructor")
 internal class BeagleView(
-    context: Context
-) : BeagleFlexView(context) {
+    private val rootView: RootView
+) : BeagleFlexView(rootView) {
 
     var stateChangedListener: OnStateChanged? = null
 
     var loadCompletedListener: OnLoadCompleted? = null
 
-    private lateinit var rootView: RootView
-
     private val viewModel by lazy { rootView.generateViewModelInstance<BeagleViewModel>() }
 
-    fun loadView(rootView: RootView, screenRequest: ScreenRequest) {
-        loadView(rootView, screenRequest, null)
+    fun loadView(screenRequest: ScreenRequest) {
+        loadView(screenRequest, null)
     }
 
-    fun updateView(rootView: RootView, url: String, view: View) {
-        loadView(rootView, ScreenRequest(url), view)
+    fun updateView(url: String, view: View) {
+        loadView(ScreenRequest(url), view)
     }
 
-    private fun loadView(rootView: RootView, screenRequest: ScreenRequest, view: View?) {
-        this.rootView = rootView
+    private fun loadView(screenRequest: ScreenRequest, view: View?) {
         viewModel.fetchComponent(screenRequest).observe(rootView.getLifecycleOwner(), Observer { state ->
             handleResponse(state, view)
         })
@@ -93,11 +92,11 @@ internal class BeagleView(
                 (component as? OnStateUpdatable<ServerDrivenComponent>)?.onUpdateState(component)
             } else {
                 removeView(view)
-                addServerDrivenComponent(component, rootView)
+                addServerDrivenComponent(component)
             }
         } else {
             removeAllViewsInLayout()
-            addServerDrivenComponent(component, rootView)
+            addServerDrivenComponent(component)
             loadCompletedListener?.invoke()
         }
     }

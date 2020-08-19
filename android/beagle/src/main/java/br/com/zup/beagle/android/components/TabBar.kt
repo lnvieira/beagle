@@ -54,7 +54,7 @@ data class TabBar(
     override fun buildView(rootView: RootView): View {
         val containerFlex = Style(flex = Flex(grow = 1.0))
         val tabBar = makeTabLayout(rootView.getContext())
-        val container = viewFactory.makeBeagleFlexView(rootView.getContext(), containerFlex)
+        val container = viewFactory.makeBeagleFlexView(rootView, containerFlex)
         configTabSelectedListener(tabBar, rootView)
         configCurrentTabObserver(tabBar, rootView)
         container.addView(tabBar)

@@ -24,6 +24,7 @@ import androidx.fragment.app.Fragment
 import br.com.zup.beagle.android.action.RequestActionMethod
 import br.com.zup.beagle.android.action.SendRequest
 import br.com.zup.beagle.android.action.SetContext
+import br.com.zup.beagle.android.components.Button
 import br.com.zup.beagle.android.components.ListView
 import br.com.zup.beagle.android.components.Text
 import br.com.zup.beagle.android.components.layout.Container
@@ -32,7 +33,12 @@ import br.com.zup.beagle.android.components.layout.Screen
 import br.com.zup.beagle.android.context.ContextData
 import br.com.zup.beagle.android.context.expressionOf
 import br.com.zup.beagle.android.utils.toView
+import br.com.zup.beagle.core.Style
+import br.com.zup.beagle.ext.applyStyle
+import br.com.zup.beagle.ext.unitPercent
+import br.com.zup.beagle.ext.unitReal
 import br.com.zup.beagle.widget.core.ListDirection
+import br.com.zup.beagle.widget.core.Size
 
 class ContextListViewFragment : Fragment() {
 
@@ -42,47 +48,135 @@ class ContextListViewFragment : Fragment() {
     ): View? {
         val declarative = Screen(
             navigationBar = NavigationBar(title = "List"),
-            child = Container(children = listOf(buildListView()))
+            child = list
         )
         return context?.let { declarative.toView(this) }
     }
 
-    data class Genre(
-        val id: Long,
-        val name: String
+    private val list = ListView(
+        context = ContextData(
+            id = "insideContext",
+            value = listOf("1 inside", "2 inside", "3 inside", "4 inside", "5 inside",
+                "6 inside", "7 inside", "8 inside", "9 inside", "10 inside",
+                "11 inside", "12 inside", "13 inside", "14 inside", "15 inside",
+                "16 inside", "17 inside", "18 inside", "19 inside", "20 inside"
+            )
+        ),
+        dataSource = expressionOf("@{insideContext}"),
+        direction = ListDirection.HORIZONTAL,
+        template = Container(
+            children = listOf(
+                Button(
+                    text = expressionOf("@{item}"),
+                    onPress = listOf(
+                        SetContext(
+                            contextId = "insideContext",
+                            path = "[0]",
+                            value = "0 inside"
+                        )
+                    )
+                ).applyStyle(
+                    Style(
+                        size = Size(width = 300.unitReal(), height = 80.unitReal())
+                    )
+                )
+            )
+        )
     )
 
     private fun buildListView() = ListView(
         context = ContextData(
-            id = "initialContext",
-            value =
-            listOf(
-                Genre(
-                    id = 0,
-                    name = ""
+            id = "outsideContext",
+            value = listOf("1 OUTSIDE"/*, "2 OUTSIDE", "3 OUTSIDE", "4 OUTSIDE", "5 OUTSIDE",
+                "6 OUTSIDE", "7 OUTSIDE", "8 OUTSIDE", "9 OUTSIDE", "10 OUTSIDE"*/)
+        ),
+        dataSource = expressionOf("@{outsideContext}"),
+        direction = ListDirection.VERTICAL,
+        template = Container(
+            children = listOf(
+                Text(text = expressionOf("@{item}")),
+                list
+            )
+        ).applyStyle(
+            Style(
+                size = Size(width = 100.unitPercent(), height = 300.unitReal())
+            )
+        )
+    )
+
+    data class Movie(
+        val poster_path: String?,
+        val original_title: String,
+        val backdrop_path: String?
+    )
+
+    private val listMovies = ListView(
+        context = ContextData(
+            id = "movieContext",
+            value = listOf(
+                Movie(
+                    poster_path = "",
+                    original_title = "",
+                    backdrop_path = ""
                 )
             )
         ),
-        onInit = listOf(SendRequest(
-            url = "https://api.themoviedb.org/3/genre/movie/list?api_key=d272326e467344029e68e3c4ff0b4059",
-            method = RequestActionMethod.GET,
-            onSuccess = listOf(
-                SetContext(
-                    contextId = "initialContext",
-                    value = "@{onSuccess.data.genres}"
+        onInit = listOf(
+            SendRequest(
+                url = "https://api.themoviedb.org/3/discover/movie?api_key=d272326e467344029e68e3c4ff0b4059&with_genres=28",
+                method = RequestActionMethod.GET,
+                onSuccess = listOf(
+                    SetContext(
+                        contextId = "movieContext",
+                        value = "@{onSuccess.data.results}"
+                    )
                 )
             )
-        )
+        ),
+        dataSource = expressionOf("@{movieContext}"),
+        direction = ListDirection.HORIZONTAL,
+        template = Text(text = expressionOf("@{item.original_title}"))
+    )
+
+    private val listGenres = ListView(
+        context = ContextData(
+            id = "initialContext",
+            value = listOf(
+                "1fora",
+                "2fora",
+                "3fora",
+                "4fora",
+                "5fora",
+                "6fora",
+                "7fora",
+                "8fora",
+                "9fora",
+                "10fora",
+                "11fora",
+                "12fora",
+                "13fora",
+                "14fora",
+                "15fora",
+                "16fora",
+                "17fora",
+                "18fora",
+                "19fora",
+                "20fora"
+            )
         ),
         dataSource = expressionOf("@{initialContext}"),
         direction = ListDirection.VERTICAL,
-        template = Text(text = "@{item.name}"),
-        onScrollEnd = listOf(SendRequest(
-            url = "https://api.themoviedb.org/3/genre/movie/list?api_key=d272326e467344029e68e3c4ff0b4059",
-            method = RequestActionMethod.GET
+        template = Container(
+            listOf(
+                Text(text = expressionOf("@{item}")),
+                listMovies.applyStyle(Style(backgroundColor = "#b7472a"))
+            )
+        ).applyStyle(
+            Style(
+                backgroundColor = "#2a7886",
+                size = Size(width = 100.unitPercent(), height = 300.unitReal())
+            )
         )
-        ),
-        scrollThreshold = 80
     )
 
     companion object {

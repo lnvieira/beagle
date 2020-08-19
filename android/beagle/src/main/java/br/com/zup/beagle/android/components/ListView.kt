@@ -124,13 +124,13 @@ internal class ListViewRecyclerAdapter(
     override fun getItemViewType(position: Int): Int = position
 
     override fun onCreateViewHolder(parent: ViewGroup, position: Int): ViewHolder {
-        val view = viewFactory.makeBeagleFlexView(rootView.getContext()).also {
+        val view = viewFactory.makeBeagleFlexView(rootView).also {
             val width = if (orientation == RecyclerView.VERTICAL)
                 ViewGroup.LayoutParams.MATCH_PARENT else
                 ViewGroup.LayoutParams.WRAP_CONTENT
             val layoutParams = ViewGroup.LayoutParams(width, ViewGroup.LayoutParams.WRAP_CONTENT)
             it.layoutParams = layoutParams
-            it.addServerDrivenComponent(children[position], rootView)
+            it.addServerDrivenComponent(children[position])
         }
         return ViewHolder(view)
     }
