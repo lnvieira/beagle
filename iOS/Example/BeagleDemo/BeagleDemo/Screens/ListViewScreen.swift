@@ -30,43 +30,70 @@ struct ListViewScreen: DeeplinkScreen {
     var screen: Screen {
         return Screen(
             navigationBar: NavigationBar(title: "ListView"),
-            child: listView
+            child: Container(
+                children: [
+                    listView
+                ],
+                widgetProperties: WidgetProperties(
+                    style: Style(
+                        flex: Flex().grow(1)
+                    )
+                )
+            )
         )
     }
     
-    var listView = ListView(direction: .horizontal) {
-        Touchable(onPress: [Navigate.pushView(.remote(.init(url: .textLazyComponentEndpoint)))]) {
-            Text("0000")
-        }
-        Text("0001", widgetProperties: .init(style: Style(size: Size().width(100).height(100))))
-        Text("0002")
-        Text("0003")
-        Text("0004")
-        LazyComponent(
-            path: .textLazyComponentEndpoint,
-            initialState: Text("Loading LazyComponent...")
+    var image = Image(
+        .value(.local("imageBeagle")),
+        widgetProperties: WidgetProperties(
+            style: Style(
+                size: Size().width(100).height(100)
+            )
         )
-        Text("0005")
-        Text("0006")
-        Text("0007")
-        Text("0008")
-        Text("0009")
-        Text("0010")
-        Text("0011")
-        Text("0012")
-        Text("0013")
-        Image(.value(.local("beagle")))
-        Text("0014")
-        Text("0015")
-        Text("0016")
-        Image(.value(.remote(.init(url: .networkImageBeagle))))
-        Text("0017")
-        Text("0018")
-        Text("0019")
-        Text("0020")
-        Container {
-            Text("Text1")
-            Text("Text2")
-        }
-    }
+    )
+    
+    var listView = ListView(
+        context: Context(
+            id: "initialContext",
+            value: ""
+        ),
+        onInit: [SendRequest(
+            url: "https://run.mocky.io/v3/28f3ad29-07ed-44b3-af95-a6986bfd8565",
+            method: .get,
+            onSuccess: [
+                SetContext(
+                    contextId: "initialContext",
+                    value: "@{onSuccess.data.genres}"
+                )
+            ]
+        )],
+        dataSource: Expression("@{initialContext}"),
+        direction: .horizontal,
+        template: Container(
+            children: [
+                Text(
+                    "@{item.name}",
+                    widgetProperties: WidgetProperties(
+                        style: Style(
+                            backgroundColor: "#ffa36c"
+                        )
+                    )
+                )
+            ],
+            widgetProperties: WidgetProperties(
+                style: Style(
+                    backgroundColor: "#0f4c75",
+                    margin: EdgeValue().all(10)
+                )
+            )
+        ),
+        onScrollEnd: [SendRequest(url: "")],
+        scrollThreshold: 80,
+        widgetProperties: WidgetProperties(
+            style: Style(
+                backgroundColor: "#cedebd",
+                flex: Flex().grow(1)
+            )
+        )
+    )
 }

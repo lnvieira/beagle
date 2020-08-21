@@ -210,22 +210,6 @@ extension LazyComponent {
     }
 }
 
-// MARK: ListView Decodable
-extension ListView {
-
-    enum CodingKeys: String, CodingKey {
-        case children
-        case direction
-    }
-
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-
-        children = try container.decode(forKey: .children)
-        direction = try container.decode(Direction.self, forKey: .direction)
-    }
-}
-
 // MARK: PageView Decodable
 extension PageView {
 

@@ -21,6 +21,7 @@ import BeagleSchema
 extension UIView {
     private static var contextMapKey = "contextMapKey"
     private static var expressionLastValueMapKey = "expressionLastValueMapKey"
+    private static var parentContextKey = "parentContextKey"
     
     private class ObjectWrapper<T> {
         let object: T?
@@ -45,6 +46,15 @@ extension UIView {
         }
         set {
             objc_setAssociatedObject(self, &UIView.expressionLastValueMapKey, ObjectWrapper(newValue), .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+    }
+    
+    weak var parentContext: UIView? {
+        get {
+            objc_getAssociatedObject(self, &UIView.parentContextKey) as? UIView
+        }
+        set {
+            objc_setAssociatedObject(self, &UIView.parentContextKey, newValue, .OBJC_ASSOCIATION_ASSIGN)
         }
     }
     
@@ -76,6 +86,7 @@ extension UIView {
             let dynamicObject = expression.evaluate(model: context.value)
             let value: T? = self.transform(dynamicObject)
             completion(value)
+            self.style.markDirty()
         }
         let contextObserver = ContextObserver(onContextChange: closure)
         context.addObserver(contextObserver)
@@ -98,6 +109,7 @@ extension UIView {
                 let closure: (Context) -> Void = { _ in
                     let value: T? = self.evaluate(for: expression, contextId: single.context)
                     completion(value)
+                    self.style.markDirty()
                 }
                 let contextObserver = ContextObserver(onContextChange: closure)
                 context.addObserver(contextObserver)
@@ -130,7 +142,7 @@ extension UIView {
             return global.context
         }
         guard let context = contextMap[id] else {
-            let observable = superview?.getContext(with: id)
+            let observable = (parentContext ?? superview)?.getContext(with: id)
             if let contextObservable = observable {
                 contextMap[id] = contextObservable
             }

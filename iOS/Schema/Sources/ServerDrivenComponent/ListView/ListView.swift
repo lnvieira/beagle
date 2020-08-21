@@ -14,23 +14,70 @@
  * limitations under the License.
  */
 
-public struct ListView: RawComponent, AutoInitiableAndDecodable {
+public struct ListView: RawWidget, HasContext, AutoInitiable {
     
-    // MARK: - Public Properties
+    public var context: Context?
+    public let onInit: [RawAction]?
+    public let dataSource: Expression<[DynamicObject]>
+    public let direction: Direction?
+    public let template: RawComponent
+    public let iteratorName: String?
+    public let onScrollEnd: [RawAction]?
+    public let scrollThreshold: Int?
+    public let useParentScroll: Bool?
+    public var widgetProperties: WidgetProperties
     
-    public let children: [RawComponent]
-    public var direction: Direction = .vertical
-
 // sourcery:inline:auto:ListView.Init
+    public init(
+        context: Context? = nil,
+        onInit: [RawAction]? = nil,
+        dataSource: Expression<[DynamicObject]>,
+        direction: Direction? = nil,
+        template: RawComponent,
+        iteratorName: String? = nil,
+        onScrollEnd: [RawAction]? = nil,
+        scrollThreshold: Int? = nil,
+        useParentScroll: Bool? = nil,
+        widgetProperties: WidgetProperties = WidgetProperties()
+    ) {
+        self.context = context
+        self.onInit = onInit
+        self.dataSource = dataSource
+        self.direction = direction
+        self.template = template
+        self.iteratorName = iteratorName
+        self.onScrollEnd = onScrollEnd
+        self.scrollThreshold = scrollThreshold
+        self.useParentScroll = useParentScroll
+        self.widgetProperties = widgetProperties
+    }
+// sourcery:end
+    
+    // MARK: Deprecated initializers
+    
+    private static func templateFor(children: [RawComponent], direction: Direction?) -> RawComponent {
+        let style = Style(flex: Flex(flexDirection: direction?.flexDirection))
+        return Container(children: children, widgetProperties: .init(style: style))
+    }
+    
+    private static func randomIteratorName() -> String {
+        return "__list_\(Int.random(in: 0...Int.max))"
+    }
+
+    @available(*, deprecated, message: "use the dataSource and template instead of children")
     public init(
         children: [RawComponent],
         direction: Direction = .vertical
     ) {
-        self.children = children
-        self.direction = direction
+        self.init(
+            dataSource: .value([.empty]),
+            direction: direction,
+            template: Self.templateFor(children: children, direction: direction),
+            iteratorName: Self.randomIteratorName()
+        )
     }
-// sourcery:end
-    
+
+    @available(*, deprecated, message: "use the dataSource and template instead of children")
     public init(
         direction: Direction = .vertical,
         @ChildBuilder
@@ -38,7 +85,8 @@ public struct ListView: RawComponent, AutoInitiableAndDecodable {
     ) {
         self.init(children: [children()], direction: direction)
     }
-    
+
+    @available(*, deprecated, message: "use the dataSource and template instead of children")
     public init(
         direction: Direction = .vertical,
         @ChildrenBuilder
@@ -46,12 +94,65 @@ public struct ListView: RawComponent, AutoInitiableAndDecodable {
     ) {
         self.init(children: children(), direction: direction)
     }
+    
+}
+
+extension ListView: Decodable {
+
+    enum CodingKeys: String, CodingKey {
+        case children
+        case context
+        case onInit
+        case dataSource
+        case direction
+        case template
+        case iteratorName
+        case onScrollEnd
+        case scrollThreshold
+        case useParentScroll
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        let iteratorName = try container.decodeIfPresent(String.self, forKey: .iteratorName)
+        let direction = try container.decodeIfPresent(Direction.self, forKey: .direction)
+        
+        self.direction = direction
+        context = try container.decodeIfPresent(Context.self, forKey: .context)
+        onInit = try container.decodeIfPresent(forKey: .onInit)
+        onScrollEnd = try container.decodeIfPresent(forKey: .onScrollEnd)
+        scrollThreshold = try container.decodeIfPresent(Int.self, forKey: .scrollThreshold)
+        useParentScroll = try container.decodeIfPresent(Bool.self, forKey: .useParentScroll)
+        widgetProperties = try WidgetProperties(from: decoder)
+        
+        if container.contains(.children) {
+            template = Self.templateFor(
+                children: try container.decode(forKey: .children),
+                direction: direction
+            )
+            dataSource = .value([.empty])
+            self.iteratorName = iteratorName ?? Self.randomIteratorName()
+        } else {
+            dataSource = try container.decode(Expression<[DynamicObject]>.self, forKey: .dataSource)
+            template = try container.decode(forKey: .template)
+            self.iteratorName = iteratorName
+        }
+    }
 }
 
 extension ListView {
     public enum Direction: String, Decodable {
-           
         case vertical = "VERTICAL"
         case horizontal = "HORIZONTAL"
+        
+        public var flexDirection: Flex.FlexDirection {
+            switch self {
+            case .vertical:
+                return .column
+            case .horizontal:
+                return .row
+            }
+        }
     }
 }

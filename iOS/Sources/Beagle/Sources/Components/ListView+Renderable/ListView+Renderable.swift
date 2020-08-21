@@ -18,39 +18,44 @@ import UIKit
 import BeagleSchema
 
 extension ListView.Direction {
-    
-    func toUIKit() -> UICollectionView.ScrollDirection {
+    var scrollDirection: UICollectionView.ScrollDirection {
         switch self {
-        case .horizontal:
-            return .horizontal
         case .vertical:
             return .vertical
+        case .horizontal:
+            return .horizontal
         }
     }
-    
+    var flexDirection: Flex.FlexDirection {
+        switch self {
+        case .vertical:
+            return .column
+        case .horizontal:
+            return .row
+        }
+    }
 }
 
 extension ListView: ServerDrivenComponent {
 
     public func toView(renderer: BeagleRenderer) -> UIView {
-        let componentViews: [(view: UIView, size: CGSize)] = children.compactMap {
-            let container = Container(children: [$0], widgetProperties: .init(style: .init(positionType: .absolute)))
-            let containerView = renderer.render(container)
-            let view = UIView()
-            view.addSubview(containerView)
-            view.style.applyLayout()
-            if let view = containerView.subviews.first {
-                view.removeFromSuperview()
-                return (view: view, size: view.bounds.size)
-            }
-            return nil
-        }
-        
-        let model = ListViewUIComponent.Model(
-            component: self,
-            componentViews: componentViews
+        let view = ListViewUIComponent(
+            model: ListViewUIComponent.Model(
+                listViewItems: nil,
+                direction: direction ?? .vertical,
+                template: template,
+                iteratorName: iteratorName ?? "item",
+                onScrollEnd: onScrollEnd,
+                scrollThreshold: CGFloat(scrollThreshold ?? 100),
+                useParentScroll: useParentScroll ?? false
+            ),
+            renderer: renderer
         )
         
-        return ListViewUIComponent(model: model)
+        renderer.controller.addBinding {
+            renderer.controller.execute(actions: self.onInit, origin: view)
+        }
+        renderer.observe(dataSource, andUpdate: \.listViewItems, in: view)
+        return view
     }
 }
