@@ -28,11 +28,8 @@ import br.com.zup.beagle.android.action.Action
 import br.com.zup.beagle.android.context.Bind
 import br.com.zup.beagle.android.context.ContextComponent
 import br.com.zup.beagle.android.context.ContextData
-import br.com.zup.beagle.android.data.serializer.BeagleSerializer
 import br.com.zup.beagle.android.utils.generateViewModelInstance
 import br.com.zup.beagle.android.utils.observeBindChanges
-import br.com.zup.beagle.android.utils.setContextData
-import br.com.zup.beagle.android.utils.toView
 import br.com.zup.beagle.android.view.ViewFactory
 import br.com.zup.beagle.android.view.viewmodel.ScreenContextViewModel
 import br.com.zup.beagle.android.widget.RootView
@@ -67,15 +64,20 @@ internal data class ListViewTwo(
     @Transient
     private var list: List<Any>? = null
 
+    @Transient
+    private var onInitCalled = false
+
+    @Transient
+    private var canScrollEnd = true
+
     override fun buildView(rootView: RootView): View {
         val recyclerView = viewFactory.makeRecyclerView(rootView.getContext())
-        var onInitCalled = false
-        recyclerView.addOnAttachStateChangeListener(object: View.OnAttachStateChangeListener{
+        recyclerView.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
             override fun onViewDetachedFromWindow(v: View?) {
             }
 
             override fun onViewAttachedToWindow(v: View?) {
-                if(!onInitCalled){
+                if (!onInitCalled) {
                     onInit?.forEach { action ->
                         action.execute(rootView, recyclerView)
                     }
@@ -112,6 +114,7 @@ internal data class ListViewTwo(
                     contextAdapter.setList(value)
                 }
                 list = value
+                canScrollEnd = true
             }
         }
     }
@@ -123,32 +126,40 @@ internal data class ListViewTwo(
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                 super.onScrollStateChanged(recyclerView, newState)
-                if (needToExecuteOnScrollEnd(recyclerView)) {
-                    onScrollEnd?.forEach { action ->
-                        action.execute(rootView, recyclerView)
+                onScrollEnd?.let {
+                    if (canCallOnScrollEnd(recyclerView)) {
+                        it.forEach { action ->
+                            action.execute(rootView, recyclerView)
+                        }
+                        canScrollEnd = false
                     }
                 }
             }
         })
     }
 
-    private fun needToExecuteOnScrollEnd(recyclerView: RecyclerView): Boolean {
-        val scrolledPercent = calculateScrolledPercent(recyclerView)
-        scrollThreshold?.let {
-            return scrolledPercent >= scrollThreshold
+    private fun canCallOnScrollEnd(recyclerView: RecyclerView): Boolean {
+        val reachEnd = scrollThreshold?.let {
+            val scrolledPercent = calculateScrolledPercent(recyclerView)
+            scrolledPercent >= scrollThreshold
+        } ?: !run {
+            if (direction == ListDirection.VERTICAL) {
+                recyclerView.canScrollVertically(1)
+            } else {
+                recyclerView.canScrollHorizontally(1)
+            }
         }
-        return scrolledPercent == 100f
+        return reachEnd && canScrollEnd
     }
 
     private fun calculateScrolledPercent(recyclerView: RecyclerView): Float {
-        val layoutManager = LinearLayoutManager::class.java.cast(recyclerView.layoutManager)
-        var scrolled = 0f
-        layoutManager?.let {
-            val totalItemCount = it.itemCount.toFloat()
-            val lastVisible = it.findLastVisibleItemPosition().toFloat()
-            scrolled = (lastVisible / totalItemCount) * 100
+        var scrolledPercentage: Float
+        (recyclerView.layoutManager as LinearLayoutManager).apply {
+            val totalItemCount = itemCount
+            val lastVisible = findLastVisibleItemPosition().toFloat()
+            scrolledPercentage = (lastVisible / totalItemCount) * 100
         }
-        return scrolled
+        return scrolledPercentage
     }
 }
 
@@ -164,10 +175,8 @@ internal class ListViewContextAdapter2(
     private val viewModel = rootView.generateViewModelInstance<ScreenContextViewModel>()
 
     override fun onCreateViewHolder(parent: ViewGroup, position: Int): ContextViewHolderTwo {
-        Log.i("LIST", "onCreateViewHolder")
-
-        val template = BeagleSerializer().serializeComponent(template)
-        val newTemplate = BeagleSerializer().deserializeComponent(template)
+//        val template = BeagleSerializer().serializeComponent(template)
+//        val newTemplate = BeagleSerializer().deserializeComponent(template)
 
         val view = viewFactory.makeBeagleFlexView(
             rootView,
@@ -175,7 +184,7 @@ internal class ListViewContextAdapter2(
         ).apply {
             id = viewModel.generateNewViewId()
             layoutParams = LayoutParams(layoutParamWidth(), layoutParamHeight())
-            addServerDrivenComponent(newTemplate)
+            addServerDrivenComponent(template)
         }
         return ContextViewHolderTwo(view)
     }
@@ -191,7 +200,6 @@ internal class ListViewContextAdapter2(
     private fun getContextDataId() = iteratorName ?: "item"
 
     override fun onBindViewHolder(holder: ContextViewHolderTwo, position: Int) {
-        Log.i("LIST", "onBindViewHolder")
         viewModel.addContext(holder.itemView, ContextData(id = getContextDataId(), value = listItems[position]))
     }
 

@@ -31,13 +31,6 @@ internal abstract class ViewRenderer<T : ServerDrivenComponent>(
 ) {
     abstract val component: T
 
-    /**
-     * TODO: a criação de todas as views dentro do beagle deveria passar pelo ViewRenderer, pois vamos precisar saber
-     * quando elas estão "AttachedToWindow"
-     *
-     * talvez vamos ter que criar um mecanismo para evitar chamadas como:
-     * viewFactory.makeBeagleFlexView(rootView.getContext())
-     */
     fun build(rootView: RootView): View {
         val viewModel = rootView.generateViewModelInstance<ScreenContextViewModel>()
         val builtView = buildView(rootView)
@@ -52,6 +45,9 @@ internal abstract class ViewRenderer<T : ServerDrivenComponent>(
 
         builtView.addOnAttachStateChangeListener(object: View.OnAttachStateChangeListener{
             override fun onViewDetachedFromWindow(v: View?) {
+                v?.let {
+                    viewModel.clearContext(it)
+                }
             }
 
             override fun onViewAttachedToWindow(v: View?) {

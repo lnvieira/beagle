@@ -16,7 +16,6 @@
 
 package br.com.zup.beagle.android.utils
 
-import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import br.com.zup.beagle.R

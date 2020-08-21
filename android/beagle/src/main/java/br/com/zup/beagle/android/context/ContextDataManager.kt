@@ -16,11 +16,7 @@
 
 package br.com.zup.beagle.android.context
 
-import android.util.Log
 import android.view.View
-import android.view.ViewGroup
-import androidx.collection.LruCache
-import androidx.core.view.children
 import br.com.zup.beagle.android.action.SetContextInternal
 import br.com.zup.beagle.android.logger.BeagleMessageLogs
 import br.com.zup.beagle.android.utils.Observer
@@ -29,7 +25,6 @@ import br.com.zup.beagle.android.utils.getAllParentContexts
 import br.com.zup.beagle.android.utils.getContextBinding
 import br.com.zup.beagle.android.utils.getContextId
 import br.com.zup.beagle.android.utils.getExpressions
-import br.com.zup.beagle.android.utils.getParentContextBinding
 import br.com.zup.beagle.android.utils.setContextBinding
 import br.com.zup.beagle.android.utils.setContextData
 
@@ -67,7 +62,6 @@ internal class ContextDataManager(
      * TODO: verificar esse método aqui, pela questão do viewID não ser previsível em listas dentro de listas
      */
     fun addContext(view: View, context: ContextData) {
-
         if (context.id == globalContext.context.id) {
             BeagleMessageLogs.globalKeywordIsReservedForGlobalContext()
             return
@@ -142,11 +136,6 @@ internal class ContextDataManager(
     }
 
     fun updateContext(view: View, setContextInternal: SetContextInternal) {
-        var contextStack = ""
-        view.getAllParentContexts().forEach { contextBinding ->
-            contextStack += " - ${contextBinding.context.id}"
-        }
-        Log.wtf("context", "$contextStack")
         if (setContextInternal.contextId == globalContext.context.id) {
             GlobalContext.set(setContextInternal.value, setContextInternal.path)
         } else {
@@ -175,12 +164,6 @@ internal class ContextDataManager(
             contextView.setContextBinding(newContextBinding)
             contexts[contextView.id] = newContextBinding
             notifyBindingChanges(newContextBinding)
-        }
-    }
-
-    fun evaluateContexts() {
-        contexts.forEach { entry ->
-            notifyBindingChanges(entry.value)
         }
     }
 
