@@ -37,6 +37,7 @@ import br.com.zup.beagle.android.widget.WidgetView
 import br.com.zup.beagle.annotation.RegisterWidget
 import br.com.zup.beagle.core.ServerDrivenComponent
 import br.com.zup.beagle.core.Style
+import br.com.zup.beagle.widget.Widget
 import br.com.zup.beagle.widget.core.Flex
 import br.com.zup.beagle.widget.core.FlexDirection.COLUMN
 import br.com.zup.beagle.widget.core.FlexDirection.ROW
@@ -52,7 +53,8 @@ internal data class ListViewTwo(
     val onScrollEnd: List<Action>? = null,
     val scrollThreshold: Int? = null,
     val useParentScroll: Boolean = false,
-    val iteratorName: String? = null
+    val iteratorName: String? = null,
+    val key: String? = null
 ) : WidgetView(), ContextComponent {
 
     @Transient
@@ -200,7 +202,12 @@ internal class ListViewContextAdapter2(
     private fun getContextDataId() = iteratorName ?: "item"
 
     override fun onBindViewHolder(holder: ContextViewHolderTwo, position: Int) {
+        setIdToEachItem(listItems[position], position)
         viewModel.addContext(holder.itemView, ContextData(id = getContextDataId(), value = listItems[position]))
+    }
+
+    private fun setIdToEachItem(item: Any, position: Int) {
+        (item as? Widget)
     }
 
     fun setList(list: List<Any>) {
