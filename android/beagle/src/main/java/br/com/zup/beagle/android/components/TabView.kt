@@ -17,7 +17,6 @@
 package br.com.zup.beagle.android.components
 
 import android.content.Context
-import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.view.View
 import android.view.ViewGroup
@@ -31,14 +30,13 @@ import br.com.zup.beagle.android.context.ContextComponent
 import br.com.zup.beagle.android.context.ContextData
 import br.com.zup.beagle.android.setup.BeagleEnvironment
 import br.com.zup.beagle.android.utils.BeagleConstants.DEPRECATED_TAB_VIEW
-import br.com.zup.beagle.android.utils.StyleManager
 import br.com.zup.beagle.android.utils.dp
 import br.com.zup.beagle.android.view.ViewFactory
-import br.com.zup.beagle.core.Style
 import br.com.zup.beagle.android.widget.RootView
 import br.com.zup.beagle.android.widget.WidgetView
 import br.com.zup.beagle.annotation.RegisterWidget
 import br.com.zup.beagle.core.MultiChildComponent
+import br.com.zup.beagle.core.Style
 import br.com.zup.beagle.widget.core.Flex
 import com.google.android.material.tabs.TabLayout
 
@@ -70,10 +68,9 @@ data class TabView(
             )
         }
 
-        val containerViewPager =
-            viewFactory.makeBeagleFlexView(rootView).apply {
-                addView(viewPager)
-            }
+        val containerViewPager = viewFactory.makeBeagleFlexView(rootView).apply {
+            addView(viewPager)
+        }
 
         tabLayout.addOnTabSelectedListener(getTabSelectedListener(viewPager))
         viewPager.addOnPageChangeListener(getViewPagerChangePageListener(tabLayout))

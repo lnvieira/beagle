@@ -17,10 +17,8 @@
 package br.com.zup.beagle.android.view.custom
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.view.View
 import androidx.lifecycle.Observer
-import br.com.zup.beagle.core.ServerDrivenComponent
 import br.com.zup.beagle.android.interfaces.OnStateUpdatable
 import br.com.zup.beagle.android.utils.generateViewModelInstance
 import br.com.zup.beagle.android.utils.implementsGenericTypeOf
@@ -28,6 +26,7 @@ import br.com.zup.beagle.android.view.ScreenRequest
 import br.com.zup.beagle.android.view.viewmodel.BeagleViewModel
 import br.com.zup.beagle.android.view.viewmodel.ViewState
 import br.com.zup.beagle.android.widget.RootView
+import br.com.zup.beagle.core.ServerDrivenComponent
 
 typealias OnStateChanged = (state: BeagleViewState) -> Unit
 
@@ -41,14 +40,13 @@ sealed class BeagleViewState {
 
 @SuppressLint("ViewConstructor")
 internal class BeagleView(
-    private val rootView: RootView
+    private val rootView: RootView,
+    private val viewModel: BeagleViewModel = rootView.generateViewModelInstance()
 ) : BeagleFlexView(rootView) {
 
     var stateChangedListener: OnStateChanged? = null
 
     var loadCompletedListener: OnLoadCompleted? = null
-
-    private val viewModel by lazy { rootView.generateViewModelInstance<BeagleViewModel>() }
 
     fun loadView(screenRequest: ScreenRequest) {
         loadView(screenRequest, null)

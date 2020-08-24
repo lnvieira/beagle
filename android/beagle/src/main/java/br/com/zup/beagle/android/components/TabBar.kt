@@ -61,7 +61,7 @@ data class TabBar(
         return container
     }
 
-    private fun makeTabLayout(context: Context) : TabLayout = viewFactory.makeTabLayout(
+    private fun makeTabLayout(context: Context): TabLayout = viewFactory.makeTabLayout(
         context,
         styleManagerFactory.getTabViewStyle(styleId)
     ).apply {
@@ -119,7 +119,6 @@ data class TabBar(
             override fun onTabReselected(tab: TabLayout.Tab?) {}
 
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
-
         })
     }
 
@@ -131,9 +130,7 @@ data class TabBar(
                 }
             }
         }
-
     }
-
 }
 
 data class TabBarItem(

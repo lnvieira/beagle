@@ -47,17 +47,15 @@ internal class ViewFactory {
 
     fun makeBeagleFlexView(rootView: RootView) = BeagleFlexView(rootView)
 
-    fun makeBeagleFlexView(rootView: RootView, style: Style) = BeagleFlexView(rootView = rootView, style = style)
+    fun makeBeagleFlexView(rootView: RootView, style: Style) = BeagleFlexView(rootView, style)
 
-    fun makeScrollView(context: Context) =
-        ScrollView(context).apply {
-            isFillViewport = true
-        }
+    fun makeScrollView(context: Context) = ScrollView(context).apply {
+        isFillViewport = true
+    }
 
-    fun makeHorizontalScrollView(context: Context) =
-        HorizontalScrollView(context).apply {
-            isFillViewport = true
-        }
+    fun makeHorizontalScrollView(context: Context) = HorizontalScrollView(context).apply {
+        isFillViewport = true
+    }
 
     fun makeButton(context: Context, id: Int) = Button(ContextThemeWrapper(context, id), null, 0)
 

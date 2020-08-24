@@ -34,15 +34,11 @@ internal abstract class ViewRenderer<T : ServerDrivenComponent>(
     fun build(rootView: RootView): View {
         val viewModel = rootView.generateViewModelInstance<ScreenContextViewModel>()
         val builtView = buildView(rootView)
-
         componentStylization.apply(builtView, component)
-
         if (builtView.id == View.NO_ID) {
             builtView.id = viewModel.generateNewViewId()
         }
-
-        contextComponentHandler.handleContext(rootView, builtView, component)
-
+        contextComponentHandler.handleContext(viewModel, builtView, component)
         builtView.addOnAttachStateChangeListener(object: View.OnAttachStateChangeListener{
             override fun onViewDetachedFromWindow(v: View?) {
                 v?.let {

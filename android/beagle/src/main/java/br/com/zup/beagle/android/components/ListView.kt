@@ -114,7 +114,6 @@ data class ListView(
     }
 }
 
-
 internal class ListViewRecyclerAdapter(
     private val children: List<ServerDrivenComponent>,
     private val viewFactory: ViewFactory,

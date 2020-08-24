@@ -46,7 +46,6 @@ data class Container(
         onInit?.let {
             this@Container.handleEvent(rootView, view, it)
         }
-
         return view.apply {
             addChildren(this)
         }

@@ -29,7 +29,6 @@ import br.com.zup.beagle.core.ServerDrivenComponent
 import br.com.zup.beagle.core.Style
 import br.com.zup.beagle.core.StyleComponent
 
-
 @SuppressLint("ViewConstructor")
 internal open class BeagleFlexView(
     private val rootView: RootView,

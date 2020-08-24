@@ -93,7 +93,6 @@ internal data class PageViewTwo(
             }
         }
     }
-
 }
 
 internal class PageViewAdapterTwo(
