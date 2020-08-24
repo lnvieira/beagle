@@ -65,7 +65,7 @@ final class ListViewUIComponent: UIView {
             contextResolver.reset()
             collectionView.reloadData()
             onScrollEndExecuted = false
-            scrollDisplayLink.isPaused = false
+            executeOnScrollEndIfNeededAfterLayout()
         }
     }
     
@@ -107,10 +107,6 @@ final class ListViewUIComponent: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
-    deinit {
-        scrollDisplayLink.invalidate()
-    }
-    
     private func setupViews() {
         addSubview(collectionView)
     }
@@ -118,27 +114,25 @@ final class ListViewUIComponent: UIView {
     override func layoutSubviews() {
         collectionView.frame = bounds
         collectionView.reloadData()
-        scrollDisplayLink.isPaused = false
+        executeOnScrollEndIfNeededAfterLayout()
         super.layoutSubviews()
     }
     
-    // MARK: - Private
+    // MARK: - onScrollEnd
     
     private var onScrollEndExecuted = false
     
-    private lazy var scrollDisplayLink: CADisplayLink = {
+    private func executeOnScrollEndIfNeededAfterLayout() {
         let displayLink = CADisplayLink(
             target: self,
-            selector: #selector(executeOnScrollEndIfNeeded(displaylink:))
+            selector: #selector(executeOnScrollEndIfNeeded(displayLink:))
         )
         displayLink.preferredFramesPerSecond = 60
         displayLink.add(to: .main, forMode: .default)
-        displayLink.isPaused = true
-        return displayLink
-    }()
+    }
     
-    @objc private func executeOnScrollEndIfNeeded(displaylink: CADisplayLink) {
-        displaylink.isPaused = true
+    @objc private func executeOnScrollEndIfNeeded(displayLink: CADisplayLink) {
+        displayLink.invalidate()
         executeOnScrollEndIfNeeded()
     }
     
