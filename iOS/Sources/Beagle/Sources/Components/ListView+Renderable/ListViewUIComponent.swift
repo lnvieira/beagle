@@ -33,7 +33,7 @@ struct ListItemContextResolver {
         contexts[item] = cell.itemContext(named: contextName)
         orphanCells.removeValue(forKey: item)
     }
-        
+    
     mutating func context(for item: Int, named contextName: String) -> Context? {
         if let orphan = orphanCells[item] {
             reuse(cell: orphan, contextName: contextName)
@@ -57,7 +57,6 @@ final class ListViewUIComponent: UIView {
     var contextResolver = ListItemContextResolver()
     var renderer: BeagleRenderer
     var model: Model
-    var validationSetOnScrollEnd = true
     
     var listViewItems: [DynamicObject]? {
         get { model.listViewItems }
@@ -65,23 +64,8 @@ final class ListViewUIComponent: UIView {
             model.listViewItems = newValue
             contextResolver.reset()
             collectionView.reloadData()
-        }
-    }
-    
-    func verificationOnScrollEnd() {
-        let sizeScroll = collectionView.contentSize
-        let sizeScreen = self.frame.size
-        switch model.direction {
-        case .horizontal:
-            if sizeScreen.width > sizeScroll.width {
-                executeOnScrollEndAction()
-                print("sizeScroll: \(sizeScroll.width) // sizeScreen: \(sizeScreen.width)")
-            }
-        case .vertical :
-            if sizeScreen.height > sizeScroll.height {
-                executeOnScrollEndAction()
-                print("sizeScroll: \(sizeScroll.height) // sizeScreen: \(sizeScreen.height)")
-            }
+            onScrollEndExecuted = false
+            scrollDisplayLink.isPaused = false
         }
     }
     
@@ -123,6 +107,10 @@ final class ListViewUIComponent: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
+    deinit {
+        scrollDisplayLink.invalidate()
+    }
+    
     private func setupViews() {
         addSubview(collectionView)
     }
@@ -130,7 +118,41 @@ final class ListViewUIComponent: UIView {
     override func layoutSubviews() {
         collectionView.frame = bounds
         collectionView.reloadData()
+        scrollDisplayLink.isPaused = false
         super.layoutSubviews()
+    }
+    
+    // MARK: - Private
+    
+    private var onScrollEndExecuted = false
+    
+    private lazy var scrollDisplayLink: CADisplayLink = {
+        let displayLink = CADisplayLink(
+            target: self,
+            selector: #selector(executeOnScrollEndIfNeeded(displaylink:))
+        )
+        displayLink.preferredFramesPerSecond = 60
+        displayLink.add(to: .main, forMode: .default)
+        displayLink.isPaused = true
+        return displayLink
+    }()
+    
+    @objc private func executeOnScrollEndIfNeeded(displaylink: CADisplayLink) {
+        displaylink.isPaused = true
+        executeOnScrollEndIfNeeded()
+    }
+    
+    private func executeOnScrollEndIfNeeded() {
+        guard !onScrollEndExecuted else { return }
+        
+        let contentSize = collectionView.contentSize[keyPath: model.direction.sizeKeyPath]
+        let contentOffset = collectionView.contentOffset[keyPath: model.direction.pointKeyPath]
+        let offset = contentOffset + frame.size[keyPath: model.direction.sizeKeyPath]
+        
+        if (contentSize > 0) && (offset / contentSize * 100 >= model.scrollThreshold) {
+            onScrollEndExecuted = true
+            renderer.controller.execute(actions: model.onScrollEnd, origin: self)
+        }
     }
     
 }
@@ -153,7 +175,7 @@ extension ListViewUIComponent {
 extension ListViewUIComponent: UICollectionViewDataSource {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return model.listViewItems?.count ?? 0
+        return listViewItems?.count ?? 0
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -195,27 +217,26 @@ extension ListViewUIComponent: UICollectionViewDelegateFlowLayout {
     }
     
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        guard !validationSetOnScrollEnd else { return }
-        
-        let sizeKeyPath: KeyPath<CGSize, CGFloat>
-        let pointKeyPath: KeyPath<CGPoint, CGFloat>
-        switch model.direction {
-        case .vertical:
-            (sizeKeyPath, pointKeyPath) = (\.height, \.y)
-        case .horizontal:
-            (sizeKeyPath, pointKeyPath) = (\.width, \.x)
-        }
-        
-        let size = scrollView.contentSize[keyPath: sizeKeyPath]
-        let offset = scrollView.contentOffset[keyPath: pointKeyPath] + frame.size[keyPath: sizeKeyPath]
-        if size > 0 && offset / size * 100 >= model.scrollThreshold {
-            executeOnScrollEndAction()
-            validationSetOnScrollEnd = false
-        }
-    }
-
-    func executeOnScrollEndAction() {
-         renderer.controller.execute(actions: model.onScrollEnd, origin: self)
+        executeOnScrollEndIfNeeded()
     }
     
+}
+
+extension ListView.Direction {
+    fileprivate var sizeKeyPath: KeyPath<CGSize, CGFloat> {
+        switch self {
+        case .vertical:
+            return \.height
+        case .horizontal:
+            return \.width
+        }
+    }
+    fileprivate var pointKeyPath: KeyPath<CGPoint, CGFloat> {
+        switch self {
+        case .vertical:
+            return \.y
+        case .horizontal:
+            return \.y
+        }
+    }
 }
