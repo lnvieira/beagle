@@ -17,6 +17,7 @@
 package br.com.zup.beagle.android.context
 
 import android.view.View
+import androidx.collection.LruCache
 import br.com.zup.beagle.android.action.SetContextInternal
 import br.com.zup.beagle.android.logger.BeagleMessageLogs
 import br.com.zup.beagle.android.utils.Observer
@@ -114,7 +115,7 @@ internal class ContextDataManager(
      */
     fun resolveBindings(view: View) {
 
-        if (bindingQueue.contains(view)) {
+        if(bindingQueue.contains(view)) {
             val contextStack = view.getAllParentContextWithGlobal()
 
             bindingQueue[view]?.forEach { binding ->
@@ -156,7 +157,7 @@ internal class ContextDataManager(
         val contextIds = binding.value.getExpressions().map { it.getContextId() }
         //return parentContexts.filterKeys { contextIds.contains(it) }.map { it.value.context }
         return parentContexts
-            .filter { contextBinding -> contextIds.contains(contextBinding.context.id) }
+            .filter { contextBinding -> contextIds.contains(contextBinding.context.id)}
             .map { it.context }
     }
 
@@ -210,9 +211,11 @@ internal class ContextDataManager(
         bindings.forEach { binding ->
             val value = contextDataEvaluation.evaluateBindExpression(
                 contextData,
-                contextBinding.cache,
+                //contextBinding.cache,
+                LruCache(10),
                 binding.bind,
-                binding.evaluatedExpressions
+                //binding.evaluatedExpressions, //TODO: ver problema no cache
+                mutableMapOf()
             )
             binding.notifyChanges(value)
         }

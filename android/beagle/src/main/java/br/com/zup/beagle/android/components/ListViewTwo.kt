@@ -64,7 +64,6 @@ internal data class ListViewTwo(
 
     override fun buildView(rootView: RootView): View {
         val recyclerView = viewFactory.makeRecyclerView(rootView.getContext())
-        Log.wtf("context", "buildRecycler - $recyclerView")
         //onInit?.forEach { action ->
          //   action.execute(rootView, recyclerView)
         //}
@@ -163,11 +162,16 @@ internal class ListViewContextAdapter2(
     private var listItems: ArrayList<Any> = ArrayList()
 ) : RecyclerView.Adapter<ContextViewHolderTwo>() {
 
-    class BeagleAdapterItem(val data: Any, var childAdapter: ListViewContextAdapter2? = null, var initialized: Boolean = false)
+    val viewPool = RecyclerView.RecycledViewPool()
+    class BeagleAdapterItem(val data: Any, var childAdapterList: MutableList<ListViewContextAdapter2> = mutableListOf(), var initialized: Boolean = false)
 
     var adapterItens = listOf<BeagleAdapterItem>()
 
     var viewHolder = 0
+
+    override fun getItemViewType(position: Int): Int {
+        return 0
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ContextViewHolderTwo {
 
@@ -180,13 +184,18 @@ internal class ListViewContextAdapter2(
                 it.layoutParams = LayoutParams(layoutParamWidth(), layoutParamHeight())
             }
 
-        val recycler = findNestedRecyclerView(view)
-        recycler?.let {
-            adapterItens[viewHolder].childAdapter = it.adapter as ListViewContextAdapter2
+        // TODO: tem que saber se esse recycler tem irmãos
+        val recyclerViewList = mutableListOf<RecyclerView>()
+        findNestedRecyclerViews(view, recyclerViewList)
+        recyclerViewList.forEach {
+            it.setRecycledViewPool(viewPool)
+            adapterItens[viewHolder].childAdapterList.add(it.adapter as ListViewContextAdapter2)
+            adapterItens[viewHolder].initialized = true
         }
-        adapterItens[viewHolder].initialized = true
+        //TODO: esse index está causando problemas
         viewHolder++
-        return ContextViewHolderTwo(view, rootView)
+        val holder = ContextViewHolderTwo(view)
+        return holder
     }
 
     private fun layoutParamWidth() = if (isOrientationVertical()) MATCH_PARENT else WRAP_CONTENT
@@ -200,11 +209,17 @@ internal class ListViewContextAdapter2(
     override fun onBindViewHolder(holder: ContextViewHolderTwo, position: Int) {
         holder.itemView.setContextData(ContextData(id = "item", value = adapterItens[position].data))
 
-        val innerRecycler = findNestedRecyclerView(holder.itemView)
-        innerRecycler?.let{
+        // TODO: tem que saber se esse recycler tem irmãos
+        //val innerRecycler = findNestedRecyclerView(holder.itemView)
+        val recyclerViewList = mutableListOf<RecyclerView>()
+        findNestedRecyclerViews(holder.itemView, recyclerViewList)
+        var recyclerIndex = 0
+        recyclerViewList.forEach{
+            //it.setRecycledViewPool(viewPool)
+            //Log.wtf("context", "onBindViewHolder - $position - ${it}")
             if(!adapterItens[position].initialized) {
                 val recyclerAdapter = it.adapter as ListViewContextAdapter2
-                adapterItens[position].childAdapter =
+                adapterItens[position].childAdapterList.add(
                     ListViewContextAdapter2(
                         recyclerAdapter.template,
                         recyclerAdapter.viewFactory,
@@ -212,13 +227,17 @@ internal class ListViewContextAdapter2(
                         recyclerAdapter.rootView,
                         recyclerAdapter.onInit
                     )
-                adapterItens[position].initialized = true
-                adapterItens[position].childAdapter?.executeInit(it)
+                )
+                adapterItens[position].childAdapterList[recyclerIndex].executeInit(it)
+                //it.setAdapter(adapterItens[position].childAdapterList[recyclerIndex])
             }
 
-            it.adapter = adapterItens[position].childAdapter
-            it.adapter?.notifyDataSetChanged()
+            it.setAdapter(adapterItens[position].childAdapterList[recyclerIndex])
+
+            //it.adapter?.notifyDataSetChanged()
+            recyclerIndex++
         }
+        adapterItens[position].initialized = true
     }
 
     fun executeInit(recyclerView: RecyclerView){
@@ -244,25 +263,26 @@ internal class ListViewContextAdapter2(
 
     override fun getItemCount(): Int = adapterItens.size
 
-    fun findNestedRecyclerView(view: View): RecyclerView? {
+    fun findNestedRecyclerViews(view: View, recyclerList: MutableList<RecyclerView>) {
         if (view !is ViewGroup) {
-            return null
+            return
         }
         if (view is RecyclerView) {
-            return view
+            recyclerList.add(view)
+            return
         }
         val parent = view
         val count = parent.childCount
         for (i in 0 until count) {
             val child = parent.getChildAt(i)
-            val descendant = findNestedRecyclerView(child)
-            if (descendant != null) {
+            findNestedRecyclerViews(child, recyclerList)
+            /*if (descendant != null) {
                 return descendant
-            }
+            }*/
         }
-        return null
+        //return null
     }
 }
 
-internal class ContextViewHolderTwo(itemView: View, val rootView: RootView) : RecyclerView.ViewHolder(itemView) {
+internal class ContextViewHolderTwo(itemView: View) : RecyclerView.ViewHolder(itemView) {
 }

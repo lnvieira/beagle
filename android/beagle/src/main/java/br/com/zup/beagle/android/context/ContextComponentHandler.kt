@@ -16,6 +16,7 @@
 
 package br.com.zup.beagle.android.context
 
+import android.util.Log
 import android.view.View
 import br.com.zup.beagle.android.utils.generateViewModelInstance
 import br.com.zup.beagle.android.view.viewmodel.ScreenContextViewModel
