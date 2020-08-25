@@ -42,7 +42,9 @@ data class ListView(
     val template: ServerDrivenComponent? = null,
     val onScrollEnd: List<Action>? = null,
     val scrollThreshold: Int? = null,
-    val useParentScroll: Boolean = false
+    val useParentScroll: Boolean = false,
+    val iteratorName: String? = null,
+    val key: String? = null
 ) : WidgetView(), ContextComponent {
 
     @Deprecated(message = "", replaceWith = ReplaceWith("")) //TODO(put message here, implement replaceWith)
@@ -53,27 +55,6 @@ data class ListView(
         context = null,
         children = children,
         direction = direction
-    )
-
-    constructor(
-        context: ContextData? = null,
-        onInit: List<Action>? = null,
-        dataSource: Bind<List<Any>>,
-        direction: ListDirection,
-        template: ServerDrivenComponent,
-        onScrollEnd: List<Action>? = null,
-        scrollThreshold: Int? = null,
-        useParentScroll: Boolean = false
-    ) : this(
-        children = null,
-        context = context,
-        onInit = onInit,
-        dataSource = dataSource,
-        direction = direction,
-        template = template,
-        onScrollEnd = onScrollEnd,
-        scrollThreshold = scrollThreshold,
-        useParentScroll = useParentScroll
     )
 
     @Transient
@@ -90,7 +71,10 @@ data class ListView(
                         direction,
                         template,
                         onScrollEnd,
-                        scrollThreshold
+                        scrollThreshold,
+                        useParentScroll,
+                        iteratorName,
+                        key
                     ).buildView(rootView)
                 }
             }

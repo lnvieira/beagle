@@ -35,6 +35,7 @@ import br.com.zup.beagle.android.context.expressionOf
 import br.com.zup.beagle.android.utils.toView
 import br.com.zup.beagle.core.Style
 import br.com.zup.beagle.ext.applyStyle
+import br.com.zup.beagle.ext.setId
 import br.com.zup.beagle.ext.unitPercent
 import br.com.zup.beagle.ext.unitReal
 import br.com.zup.beagle.widget.core.ListDirection
@@ -53,35 +54,54 @@ class ContextListViewFragment : Fragment() {
         return context?.let { declarative.toView(this) }
     }
 
+    data class Person(
+        val name: String,
+        val cpf: Int
+    )
+
     private val list = ListView(
         context = ContextData(
             id = "insideContext",
-            value = listOf("1 inside", "2 inside", "3 inside", "4 inside", "5 inside",
-                "6 inside", "7 inside", "8 inside", "9 inside", "10 inside",
-                "11 inside", "12 inside", "13 inside", "14 inside", "15 inside",
-                "16 inside", "17 inside", "18 inside", "19 inside", "20 inside"
+            value = listOf(
+                Person(
+                    "Matheus",
+                    123
+                ),
+                Person(
+                    "Thalyta",
+                    456
+                ),
+                Person(
+                    "Jose",
+                    789
+                ),
+                Person(
+                    "Maria",
+                    0
+                )
             )
         ),
+        key = "cpf",
         dataSource = expressionOf("@{insideContext}"),
         direction = ListDirection.HORIZONTAL,
         template = Container(
             children = listOf(
                 Button(
-                    text = expressionOf("@{item}"),
+                    text = expressionOf("@{item.name}"),
                     onPress = listOf(
                         SetContext(
                             contextId = "insideContext",
-                            path = "[0]",
-                            value = "0 inside"
+                            path = "[0].name",
+                            value = "Updated Matheus"
                         )
                     )
                 ).applyStyle(
                     Style(
                         size = Size(width = 300.unitReal(), height = 80.unitReal())
                     )
-                )
+                )/*.setId("button")*/
             )
-        )
+        ).setId("container")
     )
 
     private fun buildListView() = ListView(

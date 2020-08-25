@@ -16,7 +16,6 @@
 
 package br.com.zup.beagle.android.components
 
-import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams
@@ -25,9 +24,11 @@ import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import br.com.zup.beagle.android.action.Action
+import br.com.zup.beagle.android.action.OnInitableComponent
 import br.com.zup.beagle.android.context.Bind
 import br.com.zup.beagle.android.context.ContextComponent
 import br.com.zup.beagle.android.context.ContextData
+import br.com.zup.beagle.android.context.normalizeContextValue
 import br.com.zup.beagle.android.utils.generateViewModelInstance
 import br.com.zup.beagle.android.utils.observeBindChanges
 import br.com.zup.beagle.android.view.ViewFactory
@@ -35,18 +36,23 @@ import br.com.zup.beagle.android.view.viewmodel.ScreenContextViewModel
 import br.com.zup.beagle.android.widget.RootView
 import br.com.zup.beagle.android.widget.WidgetView
 import br.com.zup.beagle.annotation.RegisterWidget
+import br.com.zup.beagle.core.MultiChildComponent
 import br.com.zup.beagle.core.ServerDrivenComponent
+import br.com.zup.beagle.core.SingleChildComponent
 import br.com.zup.beagle.core.Style
 import br.com.zup.beagle.widget.Widget
 import br.com.zup.beagle.widget.core.Flex
 import br.com.zup.beagle.widget.core.FlexDirection.COLUMN
 import br.com.zup.beagle.widget.core.FlexDirection.ROW
 import br.com.zup.beagle.widget.core.ListDirection
+import org.json.JSONObject
+import java.util.*
+import kotlin.collections.ArrayList
 
 @RegisterWidget
 internal data class ListViewTwo(
     override val context: ContextData? = null,
-    val onInit: List<Action>? = null,
+    override val onInit: List<Action>? = null,
     val dataSource: Bind<List<Any>>,
     val direction: ListDirection,
     val template: ServerDrivenComponent,
@@ -55,7 +61,7 @@ internal data class ListViewTwo(
     val useParentScroll: Boolean = false,
     val iteratorName: String? = null,
     val key: String? = null
-) : WidgetView(), ContextComponent {
+) : WidgetView(), ContextComponent, OnInitableComponent {
 
     @Transient
     private val viewFactory: ViewFactory = ViewFactory()
@@ -88,7 +94,7 @@ internal data class ListViewTwo(
             }
         })
         val orientation = toRecyclerViewOrientation()
-        contextAdapter = ListViewContextAdapter2(template, iteratorName, viewFactory, orientation, rootView)
+        contextAdapter = ListViewContextAdapter2(template, iteratorName, key, viewFactory, orientation, rootView)
         recyclerView.apply {
             setHasFixedSize(true)
             adapter = contextAdapter
@@ -168,6 +174,7 @@ internal data class ListViewTwo(
 internal class ListViewContextAdapter2(
     private val template: ServerDrivenComponent,
     private val iteratorName: String? = null,
+    private val key: String? = null,
     private val viewFactory: ViewFactory,
     private val orientation: Int,
     private val rootView: RootView,
@@ -202,12 +209,37 @@ internal class ListViewContextAdapter2(
     private fun getContextDataId() = iteratorName ?: "item"
 
     override fun onBindViewHolder(holder: ContextViewHolderTwo, position: Int) {
-        setIdToEachItem(listItems[position], position)
+        setIdToEachItem(template, position)
         viewModel.addContext(holder.itemView, ContextData(id = getContextDataId(), value = listItems[position]))
     }
 
-    private fun setIdToEachItem(item: Any, position: Int) {
-        (item as? Widget)
+    private fun setIdToEachItem(template: ServerDrivenComponent, position: Int) {
+        when (template) {
+            is Widget -> {
+                val suffix = getSuffix(position)
+                template.setSuffixId(suffix)
+            }
+            is SingleChildComponent -> setIdToEachItem(template.child, position)
+            is MultiChildComponent -> template.children.forEach { child ->
+                setIdToEachItem(child, position)
+            }
+        }
+    }
+
+    private fun getSuffix(position: Int) = ":${getValueFromKey(position)}"
+
+    private fun getValueFromKey(position: Int) = key?.let {
+        ((listItems[position]).normalizeContextValue() as JSONObject).get(it)
+    } ?: position
+
+    private fun Widget.setSuffixId(suffix: String) {
+        id?.let {
+            if (it.endsWith(suffix)) {
+
+            } else {
+                id += suffix
+            }
+        }
     }
 
     fun setList(list: List<Any>) {

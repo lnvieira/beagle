@@ -40,7 +40,7 @@ internal fun Any.normalizeContextValue(): Any {
 
 internal fun String.normalizeContextValue(): Any {
     return when {
-        this.startsWith("{") -> JSONObject(this)
+        this.startsWith("{") -> JSONObject(JSONObject(this).toString())
         this.startsWith("[") -> JSONArray(this)
         else -> this
     }
