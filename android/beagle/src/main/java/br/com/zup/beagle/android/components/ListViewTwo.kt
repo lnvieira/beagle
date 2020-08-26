@@ -28,7 +28,9 @@ import br.com.zup.beagle.android.action.Action
 import br.com.zup.beagle.android.context.Bind
 import br.com.zup.beagle.android.context.ContextComponent
 import br.com.zup.beagle.android.context.ContextData
+import br.com.zup.beagle.android.data.serializer.BeagleMoshi
 import br.com.zup.beagle.android.data.serializer.BeagleSerializer
+import br.com.zup.beagle.android.utils.getContextData
 import br.com.zup.beagle.android.utils.observeBindChanges
 import br.com.zup.beagle.android.utils.setContextData
 import br.com.zup.beagle.android.utils.toView
@@ -162,10 +164,15 @@ internal class ListViewContextAdapter2(
     private var listItems: ArrayList<Any> = ArrayList()
 ) : RecyclerView.Adapter<ContextViewHolderTwo>() {
 
+    //TODO: vou ter que guardar todos os contextos de todos os filhos???
     val viewPool = RecyclerView.RecycledViewPool()
-    class BeagleAdapterItem(val data: Any, var childAdapterList: MutableList<ListViewContextAdapter2> = mutableListOf(), var initialized: Boolean = false)
+    class BeagleAdapterItem(val data: Any,
+                            var childContextList: MutableList<String?> = mutableListOf(),
+                            var initialized: Boolean = false)
 
     var adapterItens = listOf<BeagleAdapterItem>()
+
+    private val templateJson = BeagleSerializer().serializeComponent(template)
 
     var viewHolder = 0
 
@@ -175,8 +182,7 @@ internal class ListViewContextAdapter2(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ContextViewHolderTwo {
 
-        val oldTemplate = BeagleSerializer().serializeComponent(template)
-        val newTemplate = BeagleSerializer().deserializeComponent(oldTemplate)
+        val newTemplate = BeagleSerializer().deserializeComponent(templateJson)
 
         val view = newTemplate
             .toView(rootView)
@@ -184,12 +190,12 @@ internal class ListViewContextAdapter2(
                 it.layoutParams = LayoutParams(layoutParamWidth(), layoutParamHeight())
             }
 
-        // TODO: tem que saber se esse recycler tem irmãos
         val recyclerViewList = mutableListOf<RecyclerView>()
         findNestedRecyclerViews(view, recyclerViewList)
         recyclerViewList.forEach {
             it.setRecycledViewPool(viewPool)
-            adapterItens[viewHolder].childAdapterList.add(it.adapter as ListViewContextAdapter2)
+            //adapterItens[viewHolder].childAdapterList.add(it.adapter as ListViewContextAdapter2)
+            //adapterItens[viewHolder].childContextList.add(it.getContextData())
             adapterItens[viewHolder].initialized = true
         }
         //TODO: esse index está causando problemas
@@ -209,35 +215,37 @@ internal class ListViewContextAdapter2(
     override fun onBindViewHolder(holder: ContextViewHolderTwo, position: Int) {
         holder.itemView.setContextData(ContextData(id = "item", value = adapterItens[position].data))
 
-        // TODO: tem que saber se esse recycler tem irmãos
-        //val innerRecycler = findNestedRecyclerView(holder.itemView)
         val recyclerViewList = mutableListOf<RecyclerView>()
         findNestedRecyclerViews(holder.itemView, recyclerViewList)
         var recyclerIndex = 0
         recyclerViewList.forEach{
-            //it.setRecycledViewPool(viewPool)
-            //Log.wtf("context", "onBindViewHolder - $position - ${it}")
             if(!adapterItens[position].initialized) {
                 val recyclerAdapter = it.adapter as ListViewContextAdapter2
-                adapterItens[position].childAdapterList.add(
-                    ListViewContextAdapter2(
-                        recyclerAdapter.template,
-                        recyclerAdapter.viewFactory,
-                        recyclerAdapter.orientation,
-                        recyclerAdapter.rootView,
-                        recyclerAdapter.onInit
-                    )
-                )
-                adapterItens[position].childAdapterList[recyclerIndex].executeInit(it)
-                //it.setAdapter(adapterItens[position].childAdapterList[recyclerIndex])
+                recyclerAdapter.executeInit(it)
+            }else {
+                adapterItens[position].childContextList.getOrNull(recyclerIndex)?.let{sContext ->
+                    val context = BeagleMoshi.moshi.adapter(ContextData::class.java).fromJson(sContext)
+                    context?.let {context ->
+                        it.setContextData(context)
+                    }
+                }
             }
 
-            it.setAdapter(adapterItens[position].childAdapterList[recyclerIndex])
-
-            //it.adapter?.notifyDataSetChanged()
             recyclerIndex++
         }
         adapterItens[position].initialized = true
+    }
+
+    override fun onViewDetachedFromWindow(holder: ContextViewHolderTwo) {
+        super.onViewDetachedFromWindow(holder)
+        val recyclerViewList = mutableListOf<RecyclerView>()
+        findNestedRecyclerViews(holder.itemView, recyclerViewList)
+        var recyclerIndex = 0
+        recyclerViewList.forEach{
+            val stringContext = BeagleMoshi.moshi.adapter(ContextData::class.java).toJson(it.getContextData())
+            adapterItens[ holder.adapterPosition].childContextList.add(recyclerIndex, stringContext)
+            recyclerIndex++
+        }
     }
 
     fun executeInit(recyclerView: RecyclerView){
