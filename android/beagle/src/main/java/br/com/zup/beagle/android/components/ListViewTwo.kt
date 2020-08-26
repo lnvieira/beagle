@@ -36,6 +36,7 @@ import br.com.zup.beagle.android.view.viewmodel.ScreenContextViewModel
 import br.com.zup.beagle.android.widget.RootView
 import br.com.zup.beagle.android.widget.WidgetView
 import br.com.zup.beagle.annotation.RegisterWidget
+import br.com.zup.beagle.core.IdentifierComponent
 import br.com.zup.beagle.core.MultiChildComponent
 import br.com.zup.beagle.core.ServerDrivenComponent
 import br.com.zup.beagle.core.SingleChildComponent
@@ -191,7 +192,7 @@ internal class ListViewContextAdapter2(
             rootView,
             Style(flex = Flex(flexDirection = flexDirection()))
         ).apply {
-            id = viewModel.generateNewViewId()
+//            id = viewModel.generateNewViewId()
             layoutParams = LayoutParams(layoutParamWidth(), layoutParamHeight())
             addServerDrivenComponent(template)
         }
@@ -215,13 +216,13 @@ internal class ListViewContextAdapter2(
 
     private fun setIdToEachItem(template: ServerDrivenComponent, position: Int) {
         when (template) {
-            is Widget -> {
-                val suffix = getSuffix(position)
-                template.setSuffixId(suffix)
-            }
             is SingleChildComponent -> setIdToEachItem(template.child, position)
             is MultiChildComponent -> template.children.forEach { child ->
                 setIdToEachItem(child, position)
+            }
+            is IdentifierComponent -> {
+                val suffix = getSuffix(position)
+                template.setSuffixId(suffix)
             }
         }
     }
