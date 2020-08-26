@@ -75,14 +75,14 @@ struct ListViewScreen: DeeplinkScreen {
                     "@{item.name}",
                     widgetProperties: WidgetProperties(
                         style: Style(
-                            backgroundColor: "#ffa36c"
+                            backgroundColor: "#bfdcae"
                         )
                     )
                 )
             ],
             widgetProperties: WidgetProperties(
                 style: Style(
-                    backgroundColor: "#0f4c75",
+                    backgroundColor: "#81b214",
                     margin: EdgeValue().all(10)
                 )
             )
@@ -91,7 +91,7 @@ struct ListViewScreen: DeeplinkScreen {
         scrollThreshold: 80,
         widgetProperties: WidgetProperties(
             style: Style(
-                backgroundColor: "#cedebd",
+                backgroundColor: "#206a5d",
                 flex: Flex().grow(1)
             )
         )

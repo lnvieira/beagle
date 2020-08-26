@@ -120,7 +120,7 @@ final class ListViewUIComponent: UIView {
     
     // MARK: - onScrollEnd
     
-    private var onScrollEndExecuted = false
+    private(set) var onScrollEndExecuted = false
     
     private func executeOnScrollEndIfNeededAfterLayout() {
         let displayLink = CADisplayLink(
@@ -230,7 +230,7 @@ extension ListView.Direction {
         case .vertical:
             return \.y
         case .horizontal:
-            return \.y
+            return \.x
         }
     }
 }
