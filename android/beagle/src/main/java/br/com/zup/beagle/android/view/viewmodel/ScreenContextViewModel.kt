@@ -45,12 +45,8 @@ internal class ScreenContextViewModel(
         contextDataManager.addBinding(view, bind, observer)
     }
 
-    fun clearContext(view: View) {
-        contextDataManager.clearContext(view)
-    }
-
-    fun resolveBindings(view: View){
-        contextDataManager.resolveBindings(view)
+    fun linkBindingToContextAndEvaluateThem(view: View) {
+        contextDataManager.linkBindingToContextAndEvaluateThem(view)
     }
 
     fun addImplicitContext(contextData: ContextData, sender: Any, actions: List<Action>) {

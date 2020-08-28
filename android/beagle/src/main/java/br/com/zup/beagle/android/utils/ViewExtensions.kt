@@ -36,23 +36,15 @@ internal fun View.findParentContextWithId(contextId: String): View? {
     return null
 }
 
-/**
- * No caso de lista dentro de lista, é possível que um contexto com o mesmo nome esteja na stack de contextos da view,
- * por isso foi alterado de Set para List.
- *
- * Ainda nesse método, foi criado um esquema de cache de parent contexts, pois é muito custoso ficar evaluando os
- * parent contexts da view a todo instante
- */
 internal fun View.getAllParentContexts(): MutableList<ContextBinding> {
     val contexts = mutableListOf<ContextBinding>()
 
-    this.getParentContextBinding()?.let {
+    getParentContextBinding()?.let {
         contexts.addAll(it)
     }
 
-    if(contexts.isEmpty()) {
-
-        var parentView: View? = this.getParentContextData()
+    if (contexts.isEmpty()) {
+        var parentView: View? = getParentContextData()
         do {
             val contextBinding = parentView?.getContextBinding()
             if (contextBinding != null) {
@@ -61,7 +53,7 @@ internal fun View.getAllParentContexts(): MutableList<ContextBinding> {
             parentView = (parentView?.parent as? ViewGroup)?.getParentContextData()
         } while (parentView != null)
 
-        this.setParentContextBinding(contexts)
+        setParentContextBinding(contexts)
     }
 
     return contexts

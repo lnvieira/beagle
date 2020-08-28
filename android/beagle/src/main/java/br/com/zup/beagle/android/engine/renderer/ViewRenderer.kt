@@ -18,13 +18,13 @@ package br.com.zup.beagle.android.engine.renderer
 
 import android.view.View
 import br.com.zup.beagle.android.components.utils.ComponentStylization
-import br.com.zup.beagle.core.ServerDrivenComponent
 import br.com.zup.beagle.android.context.ContextComponentHandler
 import br.com.zup.beagle.android.utils.generateViewModelInstance
 import br.com.zup.beagle.android.view.viewmodel.GenerateIdViewModel
 import br.com.zup.beagle.android.view.viewmodel.ScreenContextViewModel
 import br.com.zup.beagle.android.widget.RootView
 import br.com.zup.beagle.android.widget.ViewConvertable
+import br.com.zup.beagle.core.ServerDrivenComponent
 
 internal abstract class ViewRenderer<T : ServerDrivenComponent>(
     private val componentStylization: ComponentStylization<T> = ComponentStylization(),
@@ -37,23 +37,15 @@ internal abstract class ViewRenderer<T : ServerDrivenComponent>(
         val builtView = buildView(rootView)
         componentStylization.apply(builtView, component)
         if (builtView.id == View.NO_ID) {
-            builtView.id = rootView.generateViewModelInstance<GenerateIdViewModel>()
-                .getViewId(rootView.getParentId())
+            val generateIdViewModel = rootView.generateViewModelInstance<GenerateIdViewModel>()
+            builtView.id = try {
+                generateIdViewModel.getViewId(rootView.getParentId())
+            } catch (exception: Exception) {
+                View.generateViewId()
+            }
         }
-        contextComponentHandler.handleContext(viewModel, builtView, component)
-        builtView.addOnAttachStateChangeListener(object: View.OnAttachStateChangeListener{
-            override fun onViewDetachedFromWindow(v: View?) {
-                v?.let {
-                    viewModel.clearContext(it)
-                }
-            }
-
-            override fun onViewAttachedToWindow(v: View?) {
-                v?.let {
-                    viewModel.resolveBindings(it)
-                }
-            }
-        })
+        contextComponentHandler.addContext(viewModel, builtView, component)
+        contextComponentHandler.addListenerToHandleContext(viewModel, builtView)
         return builtView
     }
 

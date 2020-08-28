@@ -222,7 +222,7 @@ internal class ListViewContextAdapter2(
             }
             is IdentifierComponent -> {
                 val suffix = getSuffix(position)
-                template.setSuffixId(suffix)
+//                template.setSuffixId(suffix)
             }
         }
     }
