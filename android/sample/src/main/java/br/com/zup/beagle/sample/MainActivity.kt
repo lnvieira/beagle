@@ -27,6 +27,7 @@ import br.com.zup.beagle.sample.activities.NavigationBarActivity
 import br.com.zup.beagle.sample.activities.SampleServerDrivenActivity
 import br.com.zup.beagle.sample.constants.SAMPLE_ENDPOINT
 import br.com.zup.beagle.sample.fragment.ComposeComponentFragment
+import br.com.zup.beagle.sample.fragment.ContextListViewFragment
 import br.com.zup.beagle.sample.fragment.ContextOperationsFragment
 import br.com.zup.beagle.sample.fragment.DisabledFormSubmitFragment
 import br.com.zup.beagle.sample.fragment.FormFragment
